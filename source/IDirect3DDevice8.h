@@ -6,10 +6,21 @@ private:
 	LPDIRECT3DDEVICE8 ProxyInterface;
 	m_IDirect3D8* m_pD3D;
 
+	// State cache for FPS boost
+	DWORD RenderStateCache[256];
+	IDirect3DBaseTexture8* TextureCache[8];
+	DWORD TextureStageStateCache[8][32]; // 8 stages, 32 types each
+	D3DVIEWPORT8 ViewportCache;
+	bool bViewportCached = false;
+	
+
 public:
 	m_IDirect3DDevice8(LPDIRECT3DDEVICE8 pDevice, m_IDirect3D8* pD3D) : ProxyInterface(pDevice), m_pD3D(pD3D)
 	{
 		ProxyAddressLookupTable = new AddressLookupTable<m_IDirect3DDevice8>(this);
+		memset(RenderStateCache, 0xFE, sizeof(RenderStateCache));
+		memset(TextureCache, 0, sizeof(TextureCache));
+		memset(TextureStageStateCache, 0xFE, sizeof(TextureStageStateCache));
 	}
 	~m_IDirect3DDevice8()
 	{

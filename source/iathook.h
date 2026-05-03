@@ -99,6 +99,7 @@ namespace Iat_hook
         uintptr_t ret = (uintptr_t)*func_ptr;
         *func_ptr = newfunction;
         VirtualProtect(func_ptr, sizeof(uintptr_t), old_rights, &new_rights);
+        FlushInstructionCache(GetCurrentProcess(), func_ptr, sizeof(uintptr_t));
         return ret;
     }
 #ifdef __cplusplus

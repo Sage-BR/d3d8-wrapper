@@ -44,7 +44,15 @@ ULONG m_IDirect3DSurface8::AddRef(THIS)
 
 ULONG m_IDirect3DSurface8::Release(THIS)
 {
-	return ProxyInterface->Release();
+	ULONG ref = ProxyInterface->Release();
+
+	if (ref == 0)
+	{
+		m_pDevice->ProxyAddressLookupTable->DeleteAddress(this);
+		delete this;
+	}
+
+	return ref;
 }
 
 HRESULT m_IDirect3DSurface8::GetDevice(THIS_ IDirect3DDevice8** ppDevice)

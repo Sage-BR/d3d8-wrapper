@@ -6,7 +6,8 @@ workspace "d3d8-wrapper"
    objdir ("build/obj")
    buildlog ("build/log/%{prj.name}.log")
    buildoptions {"-std:c++latest"}
-   
+   toolset "v143"
+
    kind "SharedLib"
    language "C++"
    targetdir "data"

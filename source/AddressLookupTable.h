@@ -1,7 +1,7 @@
 #pragma once
 
 #include <unordered_map>
-#include <algorithm>
+#include <mutex>
 
 constexpr UINT MaxIndex = 11;
 
@@ -12,7 +12,7 @@ public:
 	explicit AddressLookupTable(D *pDevice) : pDevice(pDevice) {}
 	~AddressLookupTable()
 	{
-		ConstructorFlag = true;
+		bIsBeingDestroyed = true;
 
 		for (const auto& cache : g_map)
 		{
@@ -55,6 +55,9 @@ public:
 		}
 
 		constexpr UINT CacheIndex = AddressCacheIndex<T>::CacheIndex;
+		
+		std::lock_guard<std::recursive_mutex> lock(TableMutex);
+
 		auto it = g_map[CacheIndex].find(Proxy);
 
 		if (it != std::end(g_map[CacheIndex]))
@@ -62,7 +65,8 @@ public:
 			return static_cast<T *>(it->second);
 		}
 
-		return new T(static_cast<T *>(Proxy), pDevice);
+		T* wrapper = new T(static_cast<T *>(Proxy), pDevice);
+		return wrapper;
 	}
 
 	template <typename T>
@@ -71,6 +75,7 @@ public:
 		constexpr UINT CacheIndex = AddressCacheIndex<T>::CacheIndex;
 		if (Wrapper && Proxy)
 		{
+			std::lock_guard<std::recursive_mutex> lock(TableMutex);
 			g_map[CacheIndex][Proxy] = Wrapper;
 		}
 	}
@@ -78,24 +83,20 @@ public:
 	template <typename T>
 	void DeleteAddress(T *Wrapper)
 	{
-		if (!Wrapper || ConstructorFlag)
+		if (!Wrapper || bIsBeingDestroyed)
 		{
 			return;
 		}
 
 		constexpr UINT CacheIndex = AddressCacheIndex<T>::CacheIndex;
-		auto it = std::find_if(g_map[CacheIndex].begin(), g_map[CacheIndex].end(),
-			[=](auto Map) -> bool { return Map.second == Wrapper; });
-
-		if (it != std::end(g_map[CacheIndex]))
-		{
-			it = g_map[CacheIndex].erase(it);
-		}
+		std::lock_guard<std::recursive_mutex> lock(TableMutex);
+		g_map[CacheIndex].erase(Wrapper->GetProxyInterface());
 	}
 
 private:
-	bool ConstructorFlag = false;
+	bool bIsBeingDestroyed = false;
 	D *const pDevice;
+	std::recursive_mutex TableMutex;
 	std::unordered_map<void*, class AddressLookupTableObject*> g_map[MaxIndex];
 };
 

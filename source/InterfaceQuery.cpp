@@ -18,7 +18,7 @@
 
 void genericQueryInterface(REFIID riid, LPVOID *ppvObj, m_IDirect3DDevice8* m_pDevice)
 {
-	if (!ppvObj || !*ppvObj || !m_pDevice)
+	if (!ppvObj || !m_pDevice)
 	{
 		return;
 	}
